@@ -1,29 +1,42 @@
 import os
-import sys
+import time
+import random
+import google.generativeai as genai
 
-try:
-    import google.generativeai as genai
-    print("✅ Library installed successfully")
-except ImportError:
-    print("❌ Library 'google-generativeai' not found!")
-    sys.exit(1)
+# جلب المفاتيح
+GEMINI_KEY = os.getenv("GEMINI_KEY")
+if not GEMINI_KEY:
+    print("❌ المفتاح مفقود!")
+    exit(1)
 
-# جلب المفتاح
-gemini_key = os.getenv("GEMINI_KEY")
+genai.configure(api_key=GEMINI_KEY)
+model = genai.GenerativeModel('gemini-2.0-flash')
 
-if not gemini_key:
-    print("❌ GEMINI_KEY is missing from GitHub Secrets!")
-    sys.exit(1)
+keywords = ["Future of AI 2026", "Green Energy Trends", "ترند التكنولوجيا"]
 
-try:
-    genai.configure(api_key=gemini_key)
-    model = genai.GenerativeModel('gemini-2.0-flash')
-    
-    # تجربة بسيطة جداً للتأكد من الاتصال
-    response = model.generate_content("Hi")
-    if response:
-        print("✅ Connection to Gemini is Successful!")
-        print(f"Response: {response.text}")
-except Exception as e:
-    print(f"❌ Detailed Error: {str(e)}")
-    sys.exit(1)
+def generate_with_retry(prompt, retries=3, delay=45):
+    for i in range(retries):
+        try:
+            response = model.generate_content(prompt)
+            return response.text
+        except Exception as e:
+            if "429" in str(e) or "delay" in str(e).lower():
+                print(f"⚠️ السيرفر طلب انتظار.. سأنتظر {delay} ثانية (محاولة {i+1})")
+                time.sleep(delay)
+            else:
+                print(f"❌ خطأ غير متوقع: {e}")
+                return None
+    return None
+
+# التنفيذ
+topic = random.choice(keywords)
+print(f"🚀 معالجة موضوع: {topic}")
+
+article = generate_with_retry(f"Write a short HTML article about {topic} in Arabic and English.")
+
+if article:
+    print("✅ تم النجاح!")
+    print(article[:200])
+else:
+    print("❌ فشل التوليد بعد عدة محاولات.")
+    exit(1)
