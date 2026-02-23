@@ -1,7 +1,6 @@
 name: Global Trend Bot
 
 on:
-  workflow_dispatch:
   schedule:
     - cron: '0 */6 * * *'
 
