@@ -1,31 +1,28 @@
-name: Global Trend Publisher Bot
+name: Global Trend Bot
 
 on:
   schedule:
-    # سيقوم بالعمل كل 4 ساعات بالتمام والكمال (6 مقالات في اليوم)
-    - cron: '0 */4 * * *'
-  workflow_dispatch: # زر التشغيل اليدوي للتجربة في أي وقت
+    - cron: '0 */4 * * *' # يعمل كل 4 ساعات
+  workflow_dispatch: # يسمح لك بتشغيله يدوياً للتجربة
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
+      - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up Python 3.10
+      - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'
+          python-version: '3.9'
 
-      - name: Install Google AI Library
+      - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install -q -U google-generativeai
+          pip install google-generativeai
 
-      - name: Run Global Trend Bot
+      - name: Run Bot
         env:
           GEMINI_KEY: ${{ secrets.GEMINI_KEY }}
-          MY_EMAIL: ${{ secrets.MY_EMAIL }}
-          EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
+          BLOG_ID: ${{ secrets.BLOG_ID }}
         run: python bot.py
