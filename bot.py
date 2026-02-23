@@ -1,57 +1,37 @@
 import os
 import random
 import google.generativeai as genai
-from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 
-# 1. إعدادات الجيمني (Gemini Config)
-GEMINI_API_KEY = "YOUR_GEMINI_API_KEY"
+# 1. إعدادات الجيمني (استخدام الـ Secrets)
+# تأكد أنك سميت السكرت في GitHub بـ GEMINI_API_KEY
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY") 
 genai.configure(api_key=GEMINI_API_KEY)
-model = genai.GenerativeModel('gemini-2.0-flash') # أحدث موديل متاح حالياً
+model = genai.GenerativeModel('gemini-1.5-flash')
 
-# 2. إعدادات بلوجر (Blogger Config)
-BLOG_ID = "YOUR_BLOG_ID"
+# 2. إعدادات بلوجر
+BLOG_ID = os.getenv("BLOG_ID")
 
-# 3. الكلمات المفتاحية لجلب الترند (عربي + English)
-keywords = [
-    "AI breakthroughs 2026", "Global Economy Trends", "Future Technology", 
-    "أحدث تقنيات الذكاء الاصطناعي", "أخبار الفضاء والعلوم", "ترند الرياضة العالمية",
-    "Sustainable Energy News", "أخبار التكنولوجيا المالية", "World Innovation"
-]
+# 3. كلمات البحث
+keywords = ["AI news 2026", "Global Trends", "أخبار التقنية", "مستقبل التكنولوجيا"]
 
-def generate_article(topic):
+def generate_content(topic):
     prompt = (
-        f"Write a comprehensive professional article about '{topic}'.\n"
-        "The response must be in HTML format and include two sections:\n"
-        "1. Arabic Section: Starts with <h1> title, followed by an introduction, <h2> subheadings, and a detailed body.\n"
-        "2. English Section: A complete professional English translation of the same article below the Arabic part.\n"
-        "Use 💡, 🚀, 🌍 emojis. Make it SEO friendly. Wrap the Arabic part in <div dir='rtl'> and the English in <div dir='ltr'>."
+        f"اكتب مقالاً احترافياً عن {topic} بتنسيق HTML.\n"
+        "الجزء الأول: بالعربية (عنوان <h1>، فقرات <h2>).\n"
+        "الجزء الثاني: ترجمة إنجليزية كاملة بالأسفل.\n"
+        "تأكد من استخدام <div dir='rtl'> للعربي و <div dir='ltr'> للإنجليزي."
     )
-    
     response = model.generate_content(prompt)
     return response.text
 
-def post_to_blogger(title, content):
-    # هنا يتم استدعاء ملف الاعتماد (credentials.json) الذي قمت برفعه على GitHub Secrets
-    # تأكد من أنك قمت بإعداد OAuth2 بشكل صحيح في مشروعك
-    try:
-        # ملاحظة: هذا الجزء يفترض وجود توكن أو صلاحية وصول مسبقة
-        # للنشر المباشر عبر API
-        service = build('blogger', 'v3', developerKey=GEMINI_API_KEY) # كمثال بسيط
-        # (في بيئة العمل الحقيقية نستخدم OAuth2 للوصول لمدونتك الخاصة)
-        print(f"✅ تم تجهيز المقال بنجاح: {title}")
-    except Exception as e:
-        print(f"❌ خطأ في النشر: {e}")
-
 # تنفيذ العملية
-chosen_topic = random.choice(keywords)
-print(f"🚀 جاري العمل على ترند: {chosen_topic}")
-
-full_content = generate_article(chosen_topic)
-article_title = f"{chosen_topic} - Global Update | تحديث عالمي"
-
-# اطبع المحتوى للتأكد (سيظهر في الـ Logs الخاصة بـ GitHub Actions)
-print(full_content)
-
-# ملاحظة: لكي يعمل النشر التلقائي، يجب أن يكون لديك ملف 'client_secrets.json' 
-# و 'token.json' محفوظين في الـ Secrets الخاصة بـ GitHub.
+try:
+    topic = random.choice(keywords)
+    print(f"Working on: {topic}")
+    content = generate_content(topic)
+    print("Content generated successfully!")
+    # هنا البوت انتهى من توليد النص، تأكد من إعداد OAuth للنشر التلقائي
+except Exception as e:
+    print(f"Error occurred: {e}")
+    exit(1) # هذا يخبر GitHub أن هناك خطأ
