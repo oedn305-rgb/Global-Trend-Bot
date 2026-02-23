@@ -1,0 +1,31 @@
+name: Global Trend Bot
+
+on:
+  schedule:
+    # يعمل كل 4 ساعات (6 مقالات يومياً) لضمان تغطية الترند العالمي
+    - cron: '0 */4 * * *'
+  workflow_dispatch: # زر التشغيل اليدوي
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Google AI Library
+        run: |
+          python -m pip install --upgrade pip
+          pip install -q -U google-generativeai
+
+      - name: Run Global Trend Bot
+        env:
+          GEMINI_KEY: ${{ secrets.GEMINI_KEY }}
+          MY_EMAIL: ${{ secrets.MY_EMAIL }}
+          EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
+        run: python bot.py
