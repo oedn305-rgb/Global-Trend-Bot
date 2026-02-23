@@ -4,58 +4,52 @@ import sys
 import google.generativeai as genai
 from email.mime.text import MIMEText
 
-# تثبيت المكتبة لضمان العمل في بيئة GitHub
+# تثبيت المكتبة لضمان أحدث نسخة
 os.system('pip install -q -U google-generativeai')
 
 def run_global_trend_bot():
     try:
-        # استدعاء المفاتيح من Secrets
         api_key = os.getenv("GEMINI_KEY")
         sender_email = os.getenv("MY_EMAIL")
         app_password = os.getenv("EMAIL_PASS")
-        
-        # إيميل المدونة الجديدة الذي أرسلته
         target_email = "oedn305.Trand2@blogger.com" 
 
-        if not api_key or not sender_email or not app_password:
-            print("❌ هناك نقص في إعدادات Secrets في GitHub!")
-            return
-
         genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-1.5-flash')
 
-        # --- الخطوة 1: البحث عن أقوى ترند عالمي آمن ---
+        # --- حل مشكلة الـ 404: البحث عن الموديل المتاح تلقائياً ---
+        model_name = 'gemini-1.5-flash' # الافتراضي
+        try:
+            # محاولة التأكد من الموديلات المتاحة في حسابك
+            for m in genai.list_models():
+                if 'generateContent' in m.supported_generation_methods:
+                    model_name = m.name
+                    break
+        except:
+            model_name = 'models/gemini-1.5-flash' # العودة للاسم الكامل إذا فشل الحصر
+
+        model = genai.GenerativeModel(model_name)
+
+        # 1. طلب الترند العالمي
         trend_query = (
-            "What is the most popular global trending topic today in Technology, Science, Health, or Sports? "
-            "STRICTLY AVOID: Politics, Religion, Wars, and Scandals. "
-            "The topic must be safe for Google AdSense. "
-            "Provide only the title of the topic in Arabic."
+            "What is the top trending global topic today in Science, Tech, or Sports? "
+            "Avoid Politics and Religion. Provide only the title in Arabic."
         )
         
         trend_result = model.generate_content(trend_query)
         chosen_topic = trend_result.text.strip()
         
-        if not chosen_topic:
-            print("❌ لم يتم العثور على موضوع مناسب حالياً.")
-            return
+        if not chosen_topic: return
 
-        print(f"🌍 الترند المختار للمدونة الجديدة: {chosen_topic}")
-
-        # --- الخطوة 2: كتابة المقال بتنسيق SEO احترافي ---
+        # 2. كتابة المقال
         article_prompt = (
-            f"اكتب مقال HTML احترافي، طويل (أكثر من 600 كلمة) وشامل عن: {chosen_topic}. "
-            "شروط المقال لضمان ملايين الزيارات وقبول أدسنس:\n"
-            "1. محتوى حصري 100% ومفيد جداً للقارئ.\n"
-            "2. استخدم تنسيق HTML: عنوان H1 كبير، وعناوين فرعية H2 و H3، وقوائم.\n"
-            "3. لا تذكر أي أسماء مواقع أخرى أو روابط خارجية.\n"
-            "4. اجعل الأسلوب مشوقاً لجذب الزوار من محركات البحث.\n"
-            "5. ممنوع ذكر السياسة أو الدين أو أي محتوى مخالف."
+            f"اكتب مقال HTML احترافي وشامل عن: {chosen_topic}. "
+            "اجعل المقال طويلاً ومنسقاً بـ H1 و H2 ليناسب جوجل أدسنس، بدون حقوق ملكية."
         )
         
         article_response = model.generate_content(article_prompt)
         content = article_response.text.replace('```html', '').replace('```', '').strip()
 
-        # --- الخطوة 3: الإرسال الفوري لمدونة بلوجر ---
+        # 3. إرسال الإيميل
         msg = MIMEText(content, 'html', 'utf-8')
         msg['Subject'] = chosen_topic
         msg['From'] = sender_email
@@ -65,7 +59,7 @@ def run_global_trend_bot():
             server.login(sender_email, app_password)
             server.send_message(msg)
         
-        print(f"✅ تم النشر بنجاح في المدونة الجديدة: {chosen_topic}")
+        print(f"✅ تم النشر بنجاح باستخدام موديل: {model_name}")
 
     except Exception as e:
         print(f"❌ خطأ تقني: {str(e)}")
