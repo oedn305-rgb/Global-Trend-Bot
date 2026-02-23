@@ -2,20 +2,20 @@ import os
 import random
 import google.generativeai as genai
 
-# جلب المفاتيح بالأسماء الموجودة في GitHub Secrets الخاصة بك
-# تأكد من إضافة سكرت باسم BLOG_ID في GitHub
+# جلب المفاتيح من GitHub Secrets
 GEMINI_KEY = os.getenv("GEMINI_KEY")
 BLOG_ID = os.getenv("BLOG_ID")
 
 if not GEMINI_KEY:
-    print("❌ Error: GEMINI_KEY is missing from Secrets!")
+    print("❌ Error: GEMINI_KEY is missing!")
     exit(1)
 
-# إعداد الجيمني
+# إعداد الجيمني باستخدام أحدث موديل 2.0
 genai.configure(api_key=GEMINI_KEY)
-model = genai.GenerativeModel('gemini-1.5-flash')
 
-# كلمات بحث عالمية ومحلية
+# استخدام Gemini 2.0 Flash (أسرع وأدق للترجمة)
+model = genai.GenerativeModel('gemini-2.0-flash')
+
 keywords = [
     "AI breakthroughs 2026", "Global Economy Trends", 
     "أحدث تقنيات الذكاء الاصطناعي", "مستقبل الطاقة المتجددة",
@@ -23,28 +23,32 @@ keywords = [
 ]
 
 def generate_article(topic):
+    # أمر مخصص لـ Gemini 2.0 لإنشاء محتوى مزدوج اللغة بجودة عالية
     prompt = (
-        f"Write a professional article about '{topic}'.\n"
-        "Format: HTML.\n"
-        "Section 1: Arabic (Title <h1>, Body with <h2> subheadings) wrapped in <div dir='rtl'>.\n"
-        "Section 2: Professional English translation below it wrapped in <div dir='ltr'>.\n"
-        "Use emojis and SEO keywords."
+        f"Write a professional, SEO-optimized article about '{topic}'.\n"
+        "Instructions:\n"
+        "1. Start with an Arabic section (Title <h1>, detailed content with <h2> subheadings) inside <div dir='rtl'>.\n"
+        "2. Follow with a full professional English translation below it inside <div dir='ltr'>.\n"
+        "3. Use HTML tags for formatting. Include relevant emojis.\n"
+        "4. Focus on 2026 trends and future insights."
     )
+    
+    # محاولة توليد المحتوى
     response = model.generate_content(prompt)
     return response.text
 
-# تنفيذ الجلب
 try:
     chosen_topic = random.choice(keywords)
-    print(f"🚀 Processing Topic: {chosen_topic}")
+    print(f"🚀 Processing Topic: {chosen_topic} using Gemini 2.0 Flash")
     
     article_content = generate_article(chosen_topic)
     
-    # لغرض التجربة حالياً سيطبع المحتوى في الـ Logs
-    # للتأكد من أن الاتصال بالمفتاح سليم
+    # طباعة النتيجة في سجلات GitHub (للتأكد من النجاح)
     print("✅ Content Generated Successfully!")
-    print(article_content)
+    print("-" * 30)
+    print(article_content[:500] + "...") # طباعة أول 500 حرف للتأكد
     
 except Exception as e:
-    print(f"❌ Error: {e}")
+    # في حال استمر الخطأ، سيطبع السبب بدقة
+    print(f"❌ Detailed Error: {str(e)}")
     exit(1)
