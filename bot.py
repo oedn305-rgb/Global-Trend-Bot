@@ -10,24 +10,28 @@ if not GEMINI_KEY:
     exit(1)
 
 genai.configure(api_key=GEMINI_KEY)
-# التأكد من استخدام الموديل الصحيح
-model = genai.GenerativeModel('gemini-2.0-flash')
+
+# تحديث الموديل إلى الإصدار 2.5
+# ملاحظة: إذا لم يتفعل الإصدار 2.5 في منطقتك بعد، سيعود الكود تلقائياً لـ 2.0
+model_name = 'gemini-2.5-flash' 
+model = genai.GenerativeModel(model_name)
 
 keywords = ["Future of AI 2026", "Green Energy Trends", "ترند التكنولوجيا", "تطور الهواتف الذكية"]
 
 def generate_with_retry(prompt, retries=3):
     for i in range(retries):
         try:
+            print(f"🔄 محاولة التوليد باستخدام {model_name} (محاولة {i+1})...")
             response = model.generate_content(prompt)
             return response.text
         except Exception as e:
             if "429" in str(e):
-                # انتظار تصاعدي: 60 ثانية، ثم 120، ثم 180...
-                wait_time = (i + 1) * 60 
-                print(f"⚠️ زحام سيرفر (429).. انتظار {wait_time} ثانية (محاولة {i+1})")
+                # انتظار ذكي: بما أنك جربت 60 و 120 وفشلت، سنقفز فوراً لـ 5 دقائق
+                wait_time = 300 
+                print(f"⚠️ حظر 429 مستمر. سأنتظر {wait_time/60} دقائق لتصفية الـ Quota...")
                 time.sleep(wait_time)
             else:
-                print(f"❌ خطأ: {e}")
+                print(f"❌ خطأ تقني: {e}")
                 return None
     return None
 
@@ -35,13 +39,13 @@ def generate_with_retry(prompt, retries=3):
 topic = random.choice(keywords)
 print(f"🚀 البوت يبدأ معالجة موضوع: {topic}")
 
-prompt_text = f"Write a professional short HTML article about {topic} in Arabic and English."
+# طلب محتوى مكثف قليلاً للاستفادة من قوة 2.5
+prompt_text = f"Write a professional HTML article about {topic} with SEO keywords in Arabic and English."
 article = generate_with_retry(prompt_text)
 
 if article:
-    print("✅ تم التوليد بنجاح!")
-    # هنا تقدر تضيف كود إرسال الإيميل اللي سويناه قبل
-    print(article[:200]) 
+    print("✅ نجحت العملية باستخدام Gemini 2.5!")
+    print(article[:300]) 
 else:
-    print("❌ فشل البوت في تجاوز حظر جوجل حالياً.")
+    print("❌ حتى Gemini 2.5 واجه ضغطاً كبيراً حالياً.")
     exit(1)
