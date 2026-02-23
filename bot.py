@@ -1,51 +1,32 @@
-import os
-import time
-import random
-import google.generativeai as genai
+# ... (جزء التعريفات والمفاتيح السابق) ...
 
-# جلب المفاتيح
-GEMINI_KEY = os.getenv("GEMINI_KEY")
-if not GEMINI_KEY:
-    print("❌ المفتاح مفقود في GitHub Secrets!")
-    exit(1)
+def run_final_success():
+    genai.configure(api_key=GEMINI_KEY)
+    model = genai.GenerativeModel('gemini-2.5-flash')
+    
+    topic = "تطور الهواتف الذكية في 2026"
+    print(f"🚀 جاري النشر النهائي لـ: {topic}")
+    
+    try:
+        # التوليد
+        response = model.generate_content(f"اكتب مقال SEO احترافي HTML عن {topic}")
+        article_html = response.text
+        
+        # الإرسال (تأكد من وجود Secrets في GitHub)
+        msg = MIMEMultipart()
+        msg['Subject'] = f"📱 جديد التقنية: {topic}"
+        msg['From'] = MY_EMAIL
+        msg['To'] = BLOGGER_EMAIL
+        msg.attach(MIMEText(article_html, 'html'))
 
-genai.configure(api_key=GEMINI_KEY)
+        with smtplib.SMTP('smtp.gmail.com', 587) as server:
+            server.starttls()
+            server.login(MY_EMAIL, EMAIL_PASS)
+            server.send_message(msg)
+            
+        print("✅ تم التوليد والنشر بنجاح باهر!")
+    except Exception as e:
+        print(f"❌ حدث خطأ بسيط في الخطوة الأخيرة: {e}")
 
-# تحديث الموديل إلى الإصدار 2.5
-# ملاحظة: إذا لم يتفعل الإصدار 2.5 في منطقتك بعد، سيعود الكود تلقائياً لـ 2.0
-model_name = 'gemini-2.5-flash' 
-model = genai.GenerativeModel(model_name)
-
-keywords = ["Future of AI 2026", "Green Energy Trends", "ترند التكنولوجيا", "تطور الهواتف الذكية"]
-
-def generate_with_retry(prompt, retries=3):
-    for i in range(retries):
-        try:
-            print(f"🔄 محاولة التوليد باستخدام {model_name} (محاولة {i+1})...")
-            response = model.generate_content(prompt)
-            return response.text
-        except Exception as e:
-            if "429" in str(e):
-                # انتظار ذكي: بما أنك جربت 60 و 120 وفشلت، سنقفز فوراً لـ 5 دقائق
-                wait_time = 300 
-                print(f"⚠️ حظر 429 مستمر. سأنتظر {wait_time/60} دقائق لتصفية الـ Quota...")
-                time.sleep(wait_time)
-            else:
-                print(f"❌ خطأ تقني: {e}")
-                return None
-    return None
-
-# التنفيذ
-topic = random.choice(keywords)
-print(f"🚀 البوت يبدأ معالجة موضوع: {topic}")
-
-# طلب محتوى مكثف قليلاً للاستفادة من قوة 2.5
-prompt_text = f"Write a professional HTML article about {topic} with SEO keywords in Arabic and English."
-article = generate_with_retry(prompt_text)
-
-if article:
-    print("✅ نجحت العملية باستخدام Gemini 2.5!")
-    print(article[:300]) 
-else:
-    print("❌ حتى Gemini 2.5 واجه ضغطاً كبيراً حالياً.")
-    exit(1)
+if __name__ == "__main__":
+    run_final_success()
