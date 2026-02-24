@@ -3,69 +3,58 @@ import time
 import random
 import smtplib
 import re
+import google.generativeai as genai
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-import google.generativeai as genai
 
-# 1. إعدادات المفاتيح (تأكد من ضبطها في بيئة العمل الخاصة بك)
-GEMINI_KEY = os.getenv("GEMINI_KEY")
+# 1. قائمة المفاتيح (أضف مفاتيحك الجديدة هنا)
+API_KEYS = [
+    os.getenv("GEMINI_KEY_1"),
+    os.getenv("GEMINI_KEY_2") # يفضل استخدام أكثر من مفتاح
+]
+
 MY_EMAIL = os.getenv("MY_EMAIL")
-EMAIL_PASS = os.getenv("EMAIL_PASS")  # كلمة سر التطبيقات (16 حرف)
+EMAIL_PASS = os.getenv("EMAIL_PASS")
 BLOGGER_EMAIL = os.getenv("BLOGGER_EMAIL")
 
-# إعداد جمناي
-genai.configure(api_key=GEMINI_KEY)
-model = genai.GenerativeModel('gemini-2.0-flash') # تم التعديل للموديل المستقر المتاح حالياً
-
-# 2. المواضيع (أضفت لك مواضيع تقنية لزيادة فرصة قبولك في أدسينس)
-keywords = [
-    "مستقبل الذكاء الاصطناعي في 2026", 
-    "أمن المعلومات وحماية البيانات الشخصية", 
-    "تطور تقنيات الحوسبة الكمية", 
-    "أفضل أدوات الذكاء الاصطناعي للمبرمجين",
-    "كيفية تحسين محركات البحث SEO للمواقع التقنية"
-]
-topic = random.choice(keywords)
-
-# 3. توليد المقال
-print(f"🚀 جاري كتابة مقال احترافي عن: {topic}")
-
-# برومبت (Prompt) محسن ليعطيك نتائج SEO قوية
-prompt = f"""
-اكتب مقالاً احترافياً باللغة العربية حول موضوع: {topic}.
-المتطلبات:
-1. استخدم لغة HTML في التنسيق.
-2. يجب أن يحتوي على عنوان رئيسي H1 وعناوين فرعية H2 و H3.
-3. طول المقال لا يقل عن 600 كلمة.
-4. اجعل الأسلوب بشرياً وتجنب التكرار الممل.
-5. أضف فقرة عن 'رأينا التقني' لتعزيز قيمة المحتوى (E-E-A-T).
-"""
-
-try:
-    response = model.generate_content(prompt)
-    article_content = response.text
-
-    # --- إضافة التحسينات (التنظيف) ---
-    # إزالة أي علامات ```html أو علامات Markdown قد يضيفها الموديل
-    article_content = re.sub(r'```html|```', '', article_content).strip()
-
-    # 4. إعداد الإيميل
-    msg = MIMEMultipart()
-    msg['Subject'] = topic
-    msg['From'] = MY_EMAIL
-    msg['To'] = BLOGGER_EMAIL
+def generate_and_send():
+    # اختيار مفتاح عشوائي لتوزيع الضغط
+    current_key = random.choice(API_KEYS)
+    genai.configure(api_key=current_key)
     
-    # ربط المحتوى كـ HTML لكي يظهر منسقاً في بلوجر
-    msg.attach(MIMEText(article_content, 'html', 'utf-8'))
+    # محاولة استخدام الموديل المطلوب
+    model = genai.GenerativeModel('gemini-2.0-flash') 
 
-    # 5. عملية الإرسال الفعلي عبر SMTP
-    print("📧 جاري الاتصال بسيرفر جوجل لإرسال المقال...")
-    with smtplib.SMTP('smtp.gmail.com', 587) as server:
-        server.starttls() # تأمين الاتصال
-        server.login(MY_EMAIL, EMAIL_PASS)
-        server.send_message(msg)
-    
-    print(f"✅ تم النشر بنجاح! المقال الآن في طريقه لمدونتك: {topic}")
+    keywords = ["أمن المعلومات 2026", "الذكاء الاصطناعي والبرمجة", "مستقبل الطاقة المتجددة"]
+    topic = random.choice(keywords)
 
-except Exception as e:
-    print(f"❌ حدث خطأ تقني: {e}")
+    prompt = f"اكتب مقال HTML احترافي عن {topic} بالعربية، طويل ومنسق بـ H2 و H3."
+
+    try:
+        print(f"🚀 محاولة التوليد باستخدام الموديل 2.0... الموضوع: {topic}")
+        response = model.generate_content(prompt)
+        article_content = re.sub(r'```html|```', '', response.text).strip()
+
+        # إرسال الإيميل
+        msg = MIMEMultipart()
+        msg['Subject'] = topic
+        msg['From'] = MY_EMAIL
+        msg['To'] = BLOGGER_EMAIL
+        msg.attach(MIMEText(article_content, 'html', 'utf-8'))
+
+        with smtplib.SMTP('smtp.gmail.com', 587) as server:
+            server.starttls()
+            server.login(MY_EMAIL, EMAIL_PASS)
+            server.send_message(msg)
+        
+        print("✅ تم النشر بنجاح!")
+
+    except Exception as e:
+        if "429" in str(e):
+            print("⚠️ تجاوزت الحصة! السيرفر يطلب الانتظار. سأحاول مرة أخرى بعد دقيقتين...")
+            time.sleep(120) # انتظار إجباري
+        else:
+            print(f"❌ خطأ آخر: {e}")
+
+# تشغيل البوت
+generate_and_send()
