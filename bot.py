@@ -7,70 +7,59 @@ import google.generativeai as genai
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
-# 1. الإعدادات اليدوية (ضع بياناتك هنا مباشرة)
-# --------------------------------------------------
-MY_API_KEY = "ضع_هنا_مفتاح_API_الجديد_من_جوجل"
+# ==========================================
+# 1. إعداداتك الشخصية (ضع بياناتك هنا)
+# ==========================================
+API_KEY = "ضـع_مفـتاح_الـ_API_هنا"
 MY_EMAIL = "your-email@gmail.com"
-EMAIL_PASS = "xxxx xxxx xxxx xxxx" # كلمة سر التطبيقات الـ 16 حرف
-BLOGGER_EMAIL = "secret-email@blogger.com"
-# --------------------------------------------------
+EMAIL_PASS = "xxxx xxxx xxxx xxxx"  # كلمة سر التطبيقات (16 حرف)
+BLOGGER_EMAIL = "secret-address@blogger.com"
 
 # إعداد المكتبة
-genai.configure(api_key=MY_API_KEY)
-model = genai.GenerativeModel('gemini-1.5-flash') # موديل 1.5 حصته أكبر وأكثر استقراراً
+genai.configure(api_key=API_KEY)
 
-def generate_and_send():
-    # قائمة مواضيع تقنية احترافية لجذب أدسينس
-    keywords = [
-        "مستقبل الأمن السيبراني في عام 2026",
-        "تأثير الذكاء الاصطناعي على تطوير البرمجيات",
-        "كيفية حماية الخصوصية الرقمية في عصر الحوسبة الكمية",
-        "أفضل استراتيجيات التسويق بالمحتوى باستخدام AI",
-        "تطور الهواتف الذكية وتقنيات الجيل السادس 6G"
+def run_blogger_bot():
+    # استخدمنا 1.5-flash لتجنب خطأ 503 Illegal Metadata ولأنه أسرع
+    model = genai.GenerativeModel('gemini-1.5-flash')
+    
+    topics = [
+        "أهمية الأمن السيبراني في 2026",
+        "كيف يغير الذكاء الاصطناعي حياتنا اليومية",
+        "مستقبل التقنية الخضراء والطاقة النظيفة"
     ]
-    topic = random.choice(keywords)
+    topic = random.choice(topics)
 
-    # برومبت (Prompt) احترافي جداً
-    prompt = f"""
-    اكتب مقالاً طويلاً واحترافياً باللغة العربية حول: {topic}.
-    المتطلبات التقنية:
-    - استخدم تنسيق HTML بالكامل.
-    - استخدم H1 للعنوان و H2 و H3 للعناوين الفرعية.
-    - أضف فقرات مرتبة ونقاط توضيحية.
-    - اجعل المحتوى مفيداً وتعليمياً (Min 600 words).
-    - تجنب الكلمات المتكررة التي توحي بأن النص آلي.
-    """
+    print(f"🚀 البدء: توليد مقال عن {topic}")
 
     try:
-        print(f"🚀 جاري توليد المقال عن: {topic}...")
-        response = model.generate_content(prompt)
+        # 2. طلب المحتوى مع إعدادات تقليل الأخطاء
+        response = model.generate_content(
+            f"اكتب مقال HTML احترافي وباللغة العربية عن {topic}. استخدم H2 و H3 وتنسيق جذاب.",
+            generation_config={"temperature": 0.7}
+        )
         
-        # تنظيف النص من علامات المارك داون لضمان تنسيق HTML سليم
-        article_content = response.text
-        article_content = re.sub(r'```html|```', '', article_content).strip()
+        # تنظيف النص من علامات البرمجة
+        article_body = response.text
+        article_body = re.sub(r'```html|```', '', article_body).strip()
+        print("✅ تم توليد النص بنجاح.")
 
-        # إعداد الرسالة
+        # 3. إعداد الإيميل
         msg = MIMEMultipart()
         msg['Subject'] = topic
         msg['From'] = MY_EMAIL
         msg['To'] = BLOGGER_EMAIL
-        msg.attach(MIMEText(article_content, 'html', 'utf-8'))
+        msg.attach(MIMEText(article_body, 'html', 'utf-8'))
 
-        # إرسال الإيميل عبر سيرفر جوجل
+        # 4. الإرسال (استخدام SSL ومنفذ 465 لتفادي التعليق)
         print("📧 جاري الإرسال إلى بلوجر...")
-        with smtplib.SMTP('smtp.gmail.com', 587) as server:
-            server.starttls()
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465, timeout=20) as server:
             server.login(MY_EMAIL, EMAIL_PASS)
             server.send_message(msg)
         
-        print(f"✅ تم النشر بنجاح: {topic}")
+        print(f"🏁 مبروك! المقال نُشر بنجاح.")
 
     except Exception as e:
-        if "429" in str(e):
-            print("⚠️ تجاوزت الحصة اليومية! انتظر قليلاً أو استبدل المفتاح.")
-        else:
-            print(f"❌ حدث خطأ: {e}")
+        print(f"❌ حدث خطأ: {e}")
 
-# تشغيل البوت مرة واحدة
 if __name__ == "__main__":
-    generate_and_send()
+    run_blogger_bot()
