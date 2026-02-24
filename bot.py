@@ -1,58 +1,45 @@
 import os
 import time
 import random
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 import google.generativeai as genai
 
-# جلب المفاتيح
+# 1. إعدادات المفاتيح
 GEMINI_KEY = os.getenv("GEMINI_KEY")
-if not GEMINI_KEY:
-    print("❌ المفتاح مفقود في GitHub Secrets!")
-    exit(1)
+MY_EMAIL = os.getenv("MY_EMAIL")
+EMAIL_PASS = os.getenv("EMAIL_PASS")
+BLOGGER_EMAIL = os.getenv("BLOGGER_EMAIL")
 
 genai.configure(api_key=GEMINI_KEY)
+model = genai.GenerativeModel('gemini-2.5-flash')
 
-# استخدام جمانيا 2.5 فلاش
-model_name = 'gemini-2.5-flash' 
-model = genai.GenerativeModel(model_name)
-
+# 2. المواضيع
 keywords = ["Future of AI 2026", "Green Energy Trends", "ترند التكنولوجيا", "تطور الهواتف الذكية"]
-
-def generate_with_retry(prompt, retries=3):
-    for i in range(retries):
-        try:
-            print(f"🔄 محاولة التوليد باستخدام {model_name} (محاولة {i+1})...")
-            response = model.generate_content(prompt)
-            return response.text
-        except Exception as e:
-            if "429" in str(e):
-                wait_time = 300 
-                print(f"⚠️ زحام سيرفر.. سأنتظر {wait_time/60} دقائق...")
-                time.sleep(wait_time)
-            else:
-                print(f"❌ خطأ تقني: {e}")
-                return None
-    return None
-
-# التنفيذ
 topic = random.choice(keywords)
-print(f"🚀 البوت يبدأ معالجة موضوع: {topic}")
 
-# التعديل هنا: طلب مقال مفصل (أكثر من 500 كلمة) لضمان قبول أدسنس
-prompt_text = (
-    f"Write a very detailed and professional HTML article about {topic}. "
-    f"The article should be at least 500 to 700 words long. "
-    f"Use Arabic as the primary language and English for technical terms. "
-    f"Include an H1 title, several H2 subheadings, bullet points, and a strong conclusion. "
-    f"Focus on SEO keywords to attract visitors."
-)
+# 3. توليد المقال
+print(f"🚀 جاري كتابة مقال عن: {topic}")
+prompt = f"Write a professional HTML article about {topic} in Arabic. Min 500 words with H2 tags."
 
-article = generate_with_retry(prompt_text)
+try:
+    response = model.generate_content(prompt)
+    article_content = response.text
 
-if article:
-    print("✅ نجحت العملية! تم توليد مقال طويل واحترافي.")
-    # عرض أول 500 حرف للتأكد
-    print("--- بداية المقال ---")
-    print(article[:500] + "...") 
-else:
-    print("❌ فشل التوليد بعد المحاولات.")
-    exit(1)
+    # 4. أمر الإرسال الفعلي (هذا اللي كان ناقصك)
+    msg = MIMEMultipart()
+    msg['Subject'] = topic
+    msg['From'] = MY_EMAIL
+    msg['To'] = BLOGGER_EMAIL
+    msg.attach(MIMEText(article_content, 'html'))
+
+    with smtplib.SMTP('smtp.gmail.com', 587) as server:
+        server.starttls()
+        server.login(MY_EMAIL, EMAIL_PASS)
+        server.send_message(msg)
+    
+    print("✅ تم الإرسال بنجاح إلى بلوجر!")
+
+except Exception as e:
+    print(f"❌ حدث خطأ: {e}")
