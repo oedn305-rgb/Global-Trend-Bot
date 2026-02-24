@@ -11,8 +11,7 @@ if not GEMINI_KEY:
 
 genai.configure(api_key=GEMINI_KEY)
 
-# تحديث الموديل إلى الإصدار 2.5
-# ملاحظة: إذا لم يتفعل الإصدار 2.5 في منطقتك بعد، سيعود الكود تلقائياً لـ 2.0
+# استخدام جمانيا 2.5 فلاش
 model_name = 'gemini-2.5-flash' 
 model = genai.GenerativeModel(model_name)
 
@@ -26,9 +25,8 @@ def generate_with_retry(prompt, retries=3):
             return response.text
         except Exception as e:
             if "429" in str(e):
-                # انتظار ذكي: بما أنك جربت 60 و 120 وفشلت، سنقفز فوراً لـ 5 دقائق
                 wait_time = 300 
-                print(f"⚠️ حظر 429 مستمر. سأنتظر {wait_time/60} دقائق لتصفية الـ Quota...")
+                print(f"⚠️ زحام سيرفر.. سأنتظر {wait_time/60} دقائق...")
                 time.sleep(wait_time)
             else:
                 print(f"❌ خطأ تقني: {e}")
@@ -39,13 +37,22 @@ def generate_with_retry(prompt, retries=3):
 topic = random.choice(keywords)
 print(f"🚀 البوت يبدأ معالجة موضوع: {topic}")
 
-# طلب محتوى مكثف قليلاً للاستفادة من قوة 2.5
-prompt_text = f"Write a professional HTML article about {topic} with SEO keywords in Arabic and English."
+# التعديل هنا: طلب مقال مفصل (أكثر من 500 كلمة) لضمان قبول أدسنس
+prompt_text = (
+    f"Write a very detailed and professional HTML article about {topic}. "
+    f"The article should be at least 500 to 700 words long. "
+    f"Use Arabic as the primary language and English for technical terms. "
+    f"Include an H1 title, several H2 subheadings, bullet points, and a strong conclusion. "
+    f"Focus on SEO keywords to attract visitors."
+)
+
 article = generate_with_retry(prompt_text)
 
 if article:
-    print("✅ نجحت العملية باستخدام Gemini 2.5!")
-    print(article[:300]) 
+    print("✅ نجحت العملية! تم توليد مقال طويل واحترافي.")
+    # عرض أول 500 حرف للتأكد
+    print("--- بداية المقال ---")
+    print(article[:500] + "...") 
 else:
-    print("❌ حتى Gemini 2.5 واجه ضغطاً كبيراً حالياً.")
+    print("❌ فشل التوليد بعد المحاولات.")
     exit(1)
