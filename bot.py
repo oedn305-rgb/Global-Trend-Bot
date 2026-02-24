@@ -1,65 +1,77 @@
-import os
+import requests
+import smtplib
 import time
 import random
-import smtplib
 import re
-import google.generativeai as genai
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
 # ==========================================
-# 1. إعداداتك الشخصية (ضع بياناتك هنا)
+# 1. إعداداتك (تأكد من صحتها 100%)
 # ==========================================
 API_KEY = "ضـع_مفـتاح_الـ_API_هنا"
 MY_EMAIL = "your-email@gmail.com"
-EMAIL_PASS = "xxxx xxxx xxxx xxxx"  # كلمة سر التطبيقات (16 حرف)
-BLOGGER_EMAIL = "secret-address@blogger.com"
+EMAIL_PASS = "xxxx xxxx xxxx xxxx"  # كلمة سر التطبيقات
+BLOGGER_EMAIL = "secret-email@blogger.com"
 
-# إعداد المكتبة
-genai.configure(api_key=API_KEY)
-
-def run_blogger_bot():
-    # استخدمنا 1.5-flash لتجنب خطأ 503 Illegal Metadata ولأنه أسرع
-    model = genai.GenerativeModel('gemini-1.5-flash')
+def generate_article_with_retry(retries=3):
+    """توليد المقال مع محاولة الإعادة في حال فشل السيرفر"""
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={API_KEY}"
+    headers = {'Content-Type': 'application/json'}
     
-    topics = [
-        "أهمية الأمن السيبراني في 2026",
-        "كيف يغير الذكاء الاصطناعي حياتنا اليومية",
-        "مستقبل التقنية الخضراء والطاقة النظيفة"
-    ]
+    topics = ["مستقبل التقنية 2026", "أمن المعلومات للجميع", "تطور الذكاء الاصطناعي"]
     topic = random.choice(topics)
+    
+    data = {
+        "contents": [{"parts": [{"text": f"Write a professional HTML article in Arabic about {topic}. Use H2 tags, informative paragraphs, and make it SEO friendly."}]}]
+    }
 
-    print(f"🚀 البدء: توليد مقال عن {topic}")
+    for i in range(retries):
+        try:
+            print(f"🚀 محاولة {i+1}: جاري توليد المقال...")
+            response = requests.post(url, headers=headers, json=data, timeout=30)
+            response.raise_for_status() # التأكد أن الطلب ناجح (200 OK)
+            
+            result = response.json()
+            text = result['candidates'][0]['content']['parts'][0]['text']
+            # تنظيف النص من علامات Markdown
+            clean_text = re.sub(r'```html|```', '', text).strip()
+            return topic, clean_text
+        except Exception as e:
+            print(f"⚠️ فشلت المحاولة {i+1}.. السبب: {e}")
+            if i < retries - 1:
+                time.sleep(5) # انتظر 5 ثواني قبل الإعادة
+    return None, None
 
+def send_email(subject, content):
+    """إرسال الإيميل بطريقة SSL المستقرة"""
     try:
-        # 2. طلب المحتوى مع إعدادات تقليل الأخطاء
-        response = model.generate_content(
-            f"اكتب مقال HTML احترافي وباللغة العربية عن {topic}. استخدم H2 و H3 وتنسيق جذاب.",
-            generation_config={"temperature": 0.7}
-        )
-        
-        # تنظيف النص من علامات البرمجة
-        article_body = response.text
-        article_body = re.sub(r'```html|```', '', article_body).strip()
-        print("✅ تم توليد النص بنجاح.")
-
-        # 3. إعداد الإيميل
         msg = MIMEMultipart()
-        msg['Subject'] = topic
+        msg['Subject'] = subject
         msg['From'] = MY_EMAIL
         msg['To'] = BLOGGER_EMAIL
-        msg.attach(MIMEText(article_body, 'html', 'utf-8'))
+        msg.attach(MIMEText(content, 'html', 'utf-8'))
 
-        # 4. الإرسال (استخدام SSL ومنفذ 465 لتفادي التعليق)
-        print("📧 جاري الإرسال إلى بلوجر...")
+        print("📧 جاري الإرسال إلى بلوجر عبر SSL...")
         with smtplib.SMTP_SSL('smtp.gmail.com', 465, timeout=20) as server:
             server.login(MY_EMAIL, EMAIL_PASS)
             server.send_message(msg)
-        
-        print(f"🏁 مبروك! المقال نُشر بنجاح.")
-
+        return True
     except Exception as e:
-        print(f"❌ حدث خطأ: {e}")
+        print(f"❌ خطأ في الإرسال: {e}")
+        return False
 
+# ==========================================
+# تشغيل البوت (التنفيذ المضمون)
+# ==========================================
 if __name__ == "__main__":
-    run_blogger_bot()
+    subject, article = generate_article_with_retry()
+    
+    if article:
+        success = send_email(subject, article)
+        if success:
+            print("✨ مبروك! البوت اشتغل 100% والمقال نُشر.")
+        else:
+            print("❌ فشل الإرسال رغم توليد المقال.")
+    else:
+        print("❌ فشل السيرفر في الاستجابة بعد عدة محاولات.")
