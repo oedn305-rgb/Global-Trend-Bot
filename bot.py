@@ -7,44 +7,50 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
 # ==========================================
-# 1. إعداداتك (تأكد من صحتها 100%)
+# 1. إعداداتك (استبدل القيم بين العلامات بدقة)
 # ==========================================
-API_KEY = "ضـع_مفـتاح_الـ_API_هنا"
+API_KEY = "ضـع_مـفتاح_AIza_هـنا"  # تأكد أنه يبدأ بـ AIza ولا توجد مسافات
 MY_EMAIL = "your-email@gmail.com"
-EMAIL_PASS = "xxxx xxxx xxxx xxxx"  # كلمة سر التطبيقات
+EMAIL_PASS = "xxxx xxxx xxxx xxxx"  # كلمة سر التطبيقات الـ 16 حرف
 BLOGGER_EMAIL = "secret-email@blogger.com"
 
 def generate_article_with_retry(retries=3):
-    """توليد المقال مع محاولة الإعادة في حال فشل السيرفر"""
+    # رابط الـ API المباشر لتجنب أخطاء المكتبات
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={API_KEY}"
     headers = {'Content-Type': 'application/json'}
     
-    topics = ["مستقبل التقنية 2026", "أمن المعلومات للجميع", "تطور الذكاء الاصطناعي"]
+    topics = [
+        "أهمية الأمن الرقمي في 2026", 
+        "كيف تطور ذكاء الآلة في العام الأخير", 
+        "مستقبل الهواتف الذكية"
+    ]
     topic = random.choice(topics)
     
     data = {
-        "contents": [{"parts": [{"text": f"Write a professional HTML article in Arabic about {topic}. Use H2 tags, informative paragraphs, and make it SEO friendly."}]}]
+        "contents": [{"parts": [{"text": f"Write a professional HTML article in Arabic about {topic}. Use H2 and H3 tags, and make it SEO friendly."}]}]
     }
 
     for i in range(retries):
         try:
-            print(f"🚀 محاولة {i+1}: جاري توليد المقال...")
+            print(f"🚀 محاولة {i+1}: جاري التواصل مع السيرفر...")
             response = requests.post(url, headers=headers, json=data, timeout=30)
-            response.raise_for_status() # التأكد أن الطلب ناجح (200 OK)
             
+            # إذا كان هناك خطأ في المفتاح سيظهر هنا
+            if response.status_code != 200:
+                print(f"❌ خطأ من السيرفر: {response.status_code} - تأكد من صحة الـ API KEY")
+                return None, None
+                
             result = response.json()
             text = result['candidates'][0]['content']['parts'][0]['text']
-            # تنظيف النص من علامات Markdown
+            # تنظيف النص لضمان ظهور HTML فقط
             clean_text = re.sub(r'```html|```', '', text).strip()
             return topic, clean_text
         except Exception as e:
             print(f"⚠️ فشلت المحاولة {i+1}.. السبب: {e}")
-            if i < retries - 1:
-                time.sleep(5) # انتظر 5 ثواني قبل الإعادة
+            time.sleep(3)
     return None, None
 
-def send_email(subject, content):
-    """إرسال الإيميل بطريقة SSL المستقرة"""
+def send_to_blogger(subject, content):
     try:
         msg = MIMEMultipart()
         msg['Subject'] = subject
@@ -52,7 +58,7 @@ def send_email(subject, content):
         msg['To'] = BLOGGER_EMAIL
         msg.attach(MIMEText(content, 'html', 'utf-8'))
 
-        print("📧 جاري الإرسال إلى بلوجر عبر SSL...")
+        print("📧 جاري الإرسال إلى مدونة بلوجر...")
         with smtplib.SMTP_SSL('smtp.gmail.com', 465, timeout=20) as server:
             server.login(MY_EMAIL, EMAIL_PASS)
             server.send_message(msg)
@@ -61,17 +67,14 @@ def send_email(subject, content):
         print(f"❌ خطأ في الإرسال: {e}")
         return False
 
-# ==========================================
-# تشغيل البوت (التنفيذ المضمون)
-# ==========================================
+# التشغيل الفوري
 if __name__ == "__main__":
     subject, article = generate_article_with_retry()
     
     if article:
-        success = send_email(subject, article)
-        if success:
-            print("✨ مبروك! البوت اشتغل 100% والمقال نُشر.")
+        if send_to_blogger(subject, article):
+            print(f"✨ مبروووك! تم نشر المقال بنجاح: {subject}")
         else:
-            print("❌ فشل الإرسال رغم توليد المقال.")
+            print("❌ تم توليد المقال لكن فشل الإرسال للإيميل.")
     else:
-        print("❌ فشل السيرفر في الاستجابة بعد عدة محاولات.")
+        print("❌ فشل البوت في الحصول على المقال. راجع مفتاح الـ API.")
