@@ -5,28 +5,21 @@ import g4f
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
-def generate_pro_article(topic):
-    """توليد مقال احترافي بلمسة بشرية وتنسيق سيو"""
+def generate_pro_article(topic, internal_link):
+    """توليد مقال احترافي مع دمج رابط داخلي آلياً"""
     prompt = f"""
-    اكتب مقالاً طويلاً جداً (أكثر من 1000 كلمة) باللغة العربية عن موضوع: ({topic}).
-    يجب أن يتبع المقال هذا الترتيب:
-    1. مقدمة جذابة تشرح أهمية الموضوع.
-    2. جدول سريع يحتوي على أهم النقاط (استخدم وسم table).
-    3. عدة عناوين فرعية (H2, H3) تشرح الموضوع بالتفصيل.
-    4. قسم خاص بـ "نصائح الخبراء" لزيادة قيمة المحتوى.
-    5. خاتمة قوية.
-    استخدم تنسيق HTML احترافي، واجعل الأسلوب بشرياً وتثقيفياً تماماً.
+    اكتب مقالاً احترافياً طويلاً (1000 كلمة) بالعربية عن: ({topic}).
+    التنسيق: HTML (h2, h3, p, table).
+    مهم جداً: قم بدمج هذا الرابط الداخلي بشكل طبيعي داخل النص كفقرة "اقرأ أيضاً": {internal_link}
+    اجعل الأسلوب بشرياً وتجنب التكرار لضمان قبول أدسنس.
     """
-    
     try:
         response = g4f.ChatCompletion.create(
             model=g4f.models.gpt_4,
             messages=[{"role": "user", "content": prompt}],
         )
-        if response:
-            return response
-    except Exception as e:
-        print(f"Generation Error: {e}")
+        return response if response else None
+    except:
         return None
 
 def run_blogger_bot():
@@ -34,54 +27,50 @@ def run_blogger_bot():
     EMAIL_PASS = os.getenv("EMAIL_PASS")
     BLOGGER_EMAIL = os.getenv("BLOGGER_EMAIL")
 
-    if not all([MY_EMAIL, EMAIL_PASS, BLOGGER_EMAIL]):
-        print("Missing Secrets!")
-        return
+    if not all([MY_EMAIL, EMAIL_PASS, BLOGGER_EMAIL]): return
+
+    # قائمة الصفحات لعمل روابط داخلية آلية (Internal Links)
+    my_pages = [
+        "https://trend-pulse24.blogspot.com/p/about-us.html?m=1",
+        "https://trend-pulse24.blogspot.com/p/privacy-policy.html?m=1",
+        "https://trend-pulse24.blogspot.com/p/contact-us.html?m=1",
+        "https://trend-pulse24.blogspot.com/p/disclaimer.html?m=1"
+    ]
+    selected_page = random.choice(my_pages)
 
     topics = [
-        "دليل شامل للربح من التسويق بالعمولة في 2026",
-        "كيفية استخدام الذكاء الاصطناعي لتطوير عملك الخاص",
-        "خطوات عملية لحماية هاتفك وبياناتك من الاختراق",
-        "أفضل طرق استثمار العملات الرقمية للمبتدئين",
-        "أسرار تحسين محركات البحث SEO لتصدر نتائج جوجل",
-        "مستقبل الوظائف في عصر الذكاء الاصطناعي",
-        "كيف تبني مدونة ناجحة وتحقق منها أرباحاً مستمرة"
+        "دليل الربح من التسويق بالعمولة 2026",
+        "كيفية استخدام الذكاء الاصطناعي في الأعمال",
+        "أسرار حماية البيانات من الاختراق",
+        "استثمار العملات الرقمية للمبتدئين",
+        "تحسين محركات البحث SEO لتصدر النتائج"
     ]
     topic = random.choice(topics)
-    
-    human_touches = [
-        "أهلاً بكم زوارنا الكرام، اليوم سنتحدث عن موضوع يهم كل باحث عن النجاح وهو ",
-        "في ظل الثورة الرقمية الحالية، قررنا في موقعنا تسليط الضوء على ",
-        "هل تبحث عن الدليل الشامل لـ؟ اليوم سنكشف لك كل ما تحتاج معرفته عن "
-    ]
-    intro_touch = random.choice(human_touches)
 
-    print(f"Starting to generate article about: {topic}")
-
-    article_content = generate_pro_article(topic)
+    article_content = generate_pro_article(topic, selected_page)
 
     if article_content:
-        # نظام جلب صور احترافي ومباشر لضمان الظهور في بلوجر
-        search_term = "technology" if "ذكاء" in topic or "هاتف" in topic else "business"
-        img_id = random.randint(1, 1000)
-        image_url = f"https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80&sig={img_id}"
-        
-        # وسم الصورة مع تنسيق يمنع الحظر من بلوجر
-        image_tag = f'<div style="text-align:center; margin-bottom:20px;"><img src="{image_url}" alt="{topic}" style="width:100%; max-width:650px; border-radius:15px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/></div>'
+        # محرك الصور الجديد: استخدام رابط مباشر بصيغة JPG لضمان القبول
+        img_id = random.randint(10, 1000)
+        image_url = f"https://picsum.photos/id/{img_id}/800/450.jpg"
         
         msg = MIMEMultipart()
         msg['Subject'] = topic
         msg['From'] = MY_EMAIL
         msg['To'] = BLOGGER_EMAIL
         
+        # تصميم المقال مع الصورة والرابط الداخلي
         styled_content = f"""
-        <div dir="rtl" style="font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.8; color: #222; max-width: 800px; margin: auto; padding: 10px;">
-            {image_tag}
-            <p style="font-size: 1.2em; color: #444; border-right: 5px solid #1a73e8; padding-right: 15px;">{intro_touch} <strong>{topic}</strong>.</p>
+        <div dir="rtl" style="font-family: Arial; line-height: 1.8; color: #333;">
+            <div style="text-align:center;">
+                <img src="{image_url}" style="width:100%; max-width:600px; border-radius:10px;"/>
+            </div>
             <br/>
             {article_content}
-            <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; border: 1px solid #ddd; margin-top: 30px; text-align: center;">
-                <p><strong>هل أعجبك المقال؟</strong> لا تتردد في مشاركة رأيك في التعليقات!</p>
+            <br/>
+            <div style="background:#f0f0f0; padding:15px; border-radius:5px; text-align:center;">
+                <strong>اقرأ المزيد في موقعنا:</strong><br/>
+                <a href="{selected_page}">اضغط هنا لزيارة صفحتنا الرسمية</a>
             </div>
         </div>
         """
@@ -92,11 +81,9 @@ def run_blogger_bot():
             with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
                 server.login(MY_EMAIL, EMAIL_PASS)
                 server.send_message(msg)
-            print(f"✅ Success! Published: {topic}")
+            print(f"✅ تم النشر بنجاح مع الرابط الداخلي: {topic}")
         except Exception as e:
-            print(f"Email error: {e}")
-    else:
-        print("❌ Failed to generate article.")
+            print(f"Error: {e}")
 
 if __name__ == "__main__":
     run_blogger_bot()
