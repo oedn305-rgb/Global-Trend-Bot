@@ -1,28 +1,14 @@
-name: Global Trend Bot
-
-on:
-  schedule:
-    - cron: '0 */6 * * *'
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
+steps:
       - name: Checkout code
-        uses: actions/checkout@v4
-
+        uses: actions/checkout@v2
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v2
         with:
-          python-version: '3.10'
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-
+          python-version: '3.9'
       - name: Run Bot
         env:
           GEMINI_KEY: ${{ secrets.GEMINI_KEY }}
-          BLOG_ID: ${{ secrets.BLOG_ID }}
+          MY_EMAIL: ${{ secrets.MY_EMAIL }}
+          EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
+          BLOGGER_EMAIL: ${{ secrets.BLOGGER_EMAIL }}
         run: python bot.py
