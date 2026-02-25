@@ -3,31 +3,26 @@ import smtplib
 import random
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from duckduckgo_search import DDGS
+# استيراد المكتبة باسمها الجديد
+try:
+    from ddgs import DDGS
+except ImportError:
+    from duckduckgo_search import DDGS
 
 def generate_pro_article(topic):
-    """توليد مقال احترافي باستخدام التحديث الجديد للمكتبة"""
+    """توليد مقال باستخدام الطريقة المحدثة للمكتبة"""
     prompt = f"اكتب مقالاً مفصلاً واحترافياً باللغة العربية عن موضوع: ({topic}). استخدم تنسيق HTML (h2, h3, p). اجعله متوافقاً مع أدسنس وسيو، وطويل أكثر من 800 كلمة."
     
     try:
+        # الطريقة الجديدة للتعامل مع الموديل
         with DDGS() as ddgs:
-            # التحديث الجديد يستخدم ddgs.chat أو الاستعلام المباشر
-            # سنستخدم محرك البحث المخصص للمحادثة
+            # استخدام chat بالشكل الجديد المستقر
             results = ddgs.chat(prompt, model='gpt-4o-mini')
             if results:
                 return results
     except Exception as e:
-        # محاولة بديلة في حال تغيرت الواجهة مرة أخرى
-        try:
-            with DDGS() as ddgs:
-                # محاولة باستخدام الموديل الافتراضي
-                results = ""
-                for r in ddgs.chat(prompt):
-                    results += r
-                return results
-        except:
-            print(f"Error in generation: {e}")
-            return None
+        print(f"Generation Error: {e}")
+        return None
 
 def run_blogger_bot():
     MY_EMAIL = os.getenv("MY_EMAIL")
