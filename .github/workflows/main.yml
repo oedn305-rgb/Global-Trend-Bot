@@ -1,9 +1,9 @@
-name: Global Trend Bot
+name: Blogger Auto Publisher
 
 on:
+  workflow_dispatch: # يتيح لك تشغيل البوت يدوياً بضغطة زر
   schedule:
-    - cron: '0 */4 * * *' # يعمل كل 4 ساعات
-  workflow_dispatch: # يسمح لك بتشغيله يدوياً للتجربة
+    - cron: '0 */6 * * *' # ينشر مقال كل 6 ساعات تلقائياً
 
 jobs:
   build:
@@ -18,11 +18,13 @@ jobs:
           python-version: '3.9'
 
       - name: Install dependencies
-        run: |
-          pip install google-generativeai
+        run: pip install requests
 
       - name: Run Bot
+        # هنا يتم تمرير الأسرار من الخزنة إلى الكود
         env:
           GEMINI_KEY: ${{ secrets.GEMINI_KEY }}
-          BLOG_ID: ${{ secrets.BLOG_ID }}
+          MY_EMAIL: ${{ secrets.MY_EMAIL }}
+          EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
+          BLOGGER_EMAIL: ${{ secrets.BLOGGER_EMAIL }}
         run: python bot.py
