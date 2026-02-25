@@ -1,79 +1,58 @@
+import os
 import requests
 import smtplib
 import random
 import re
-import time
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
-# ==========================================
-# 1. إعداداتك الشخصية (امسح النص العربي وحط بياناتك)
-# ==========================================
-API_KEY = "AIzaSy..." # ضع هنا مفتاحك الذي يبدأ بـ AIza
-MY_EMAIL = "your-email@gmail.com" # إيميلك الجيميل
-EMAIL_PASS = "xxxx xxxx xxxx xxxx" # كلمة سر التطبيقات (16 حرف)
-BLOGGER_EMAIL = "secret-email@blogger.com" # إيميل بلوجر السري
+def run_secure_bot():
+    # --- جلب البيانات من "الأسرار" (Secrets) ---
+    # الكود الحين يروح يدور عليهم في ملفات النظام السرية
+    API_KEY = os.getenv("API_KEY")
+    MY_EMAIL = os.getenv("MY_EMAIL")
+    EMAIL_PASS = os.getenv("EMAIL_PASS")
+    BLOGGER_EMAIL = os.getenv("BLOGGER_EMAIL")
 
-# ==========================================
-# 2. إعدادات الموديل (أحدث إصدار Gemini 2.0 Flash)
-# ==========================================
-MODEL_NAME = "gemini-2.0-flash"
+    # تأكد إن الأسرار موجودة
+    if not all([API_KEY, MY_EMAIL, EMAIL_PASS, BLOGGER_EMAIL]):
+        print("❌ خطأ: لم أجد بعض المفاتيح في ملفات الأسرار! تأكد من إضافتها.")
+        return
 
-def generate_and_send():
-    # اختيار موضوع احترافي
-    topics = [
-        "أهمية الأمن السيبراني في عام 2026",
-        "كيفية استخدام الذكاء الاصطناعي في تحسين الإنتاجية",
-        "مستقبل الحوسبة السحابية وحماية البيانات"
-    ]
-    topic = random.choice(topics)
+    # أحدث موديل Gemini 2.0 Flash
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={API_KEY}"
     
-    print(f"🚀 البدء باستخدام أحدث موديل: {MODEL_NAME}")
-    print(f"📝 جاري توليد مقال عن: {topic}")
+    topic = random.choice(["تطور الذكاء الاصطناعي 2026", "حماية البيانات الرقمية", "مستقبل التكنولوجيا"])
+    print(f"🚀 جاري توليد المقال باستخدام Gemini 2.0 Flash...")
 
-    # الرابط المباشر للسيرفر
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL_NAME}:generateContent?key={API_KEY}"
-    
     payload = {
-        "contents": [{
-            "parts": [{
-                "text": f"اكتب مقال HTML احترافي وطويل باللغة العربية عن {topic}. استخدم عناوين H2 و H3 وتنسيق جذاب للمدونات."
-            }]
-        }]
+        "contents": [{"parts": [{"text": f"اكتب مقال HTML احترافي بالعربية عن {topic}."}]}]
     }
 
     try:
-        # طلب المحتوى
+        # 1. طلب المقال
         response = requests.post(url, json=payload, timeout=30)
-        
-        if response.status_code != 200:
-            print(f"❌ خطأ من جوجل ({response.status_code}): تأكد من أن الـ API KEY صحيح ومفعل.")
-            return
-
+        response.raise_for_status()
         result = response.json()
         article_html = result['candidates'][0]['content']['parts'][0]['text']
-        
-        # تنظيف النص من علامات المارك داون
         article_html = re.sub(r'```html|```', '', article_html).strip()
-        print("✅ تم توليد المقال بنجاح.")
 
-        # إعداد الإيميل
+        # 2. إعداد وإرسال الإيميل
         msg = MIMEMultipart()
         msg['Subject'] = topic
         msg['From'] = MY_EMAIL
         msg['To'] = BLOGGER_EMAIL
         msg.attach(MIMEText(article_html, 'html', 'utf-8'))
 
-        # الإرسال عبر SMTP SSL (المنفذ 465 هو الأضمن)
-        print("📧 جاري الإرسال إلى بلوجر...")
+        print(f"📧 جاري الإرسال من {MY_EMAIL} إلى بلوجر...")
         with smtplib.SMTP_SSL('smtp.gmail.com', 465, timeout=20) as server:
             server.login(MY_EMAIL, EMAIL_PASS)
             server.send_message(msg)
         
-        print(f"🏁 تم النشر بنجاح! اذهب لمدونتك وشاهد النتيجة.")
+        print("✅ تم النشر بنجاح! المفاتيح ظلت سرية والمقال طار للمدونة.")
 
     except Exception as e:
-        print(f"❌ حدث خطأ غير متوقع: {e}")
+        print(f"❌ حدث خطأ: {e}")
 
 if __name__ == "__main__":
-    generate_and_send()
+    run_secure_bot()
