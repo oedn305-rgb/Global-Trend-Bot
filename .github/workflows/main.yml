@@ -2,8 +2,8 @@ name: Blogger Bot Auto Publisher
 
 on:
   schedule:
-    - cron: '0 9 * * *' # سينشر مقالاً تلقائياً كل يوم الساعة 9 صباحاً
-  workflow_dispatch: # يتيح لك زر "تشغيل" يدوي لتجربة البوت الآن
+    - cron: '0 9 * * *' # ينشر تلقائياً كل يوم الساعة 9 صباحاً
+  workflow_dispatch: # يتيح لك التشغيل اليدوي الآن لتجربة البوت
 
 jobs:
   run-bot:
@@ -20,7 +20,7 @@ jobs:
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install duckduckgo_search typing_extensions requests
+          pip install ddgs requests typing_extensions
 
       - name: Run Blogger Bot
         env:
