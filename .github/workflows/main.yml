@@ -1,9 +1,9 @@
-name: Blogger Auto Publisher
+name: Blogger Bot
 
 on:
-  workflow_dispatch: # يتيح لك تشغيل البوت يدوياً بضغطة زر
   schedule:
-    - cron: '0 */6 * * *' # ينشر مقال كل 6 ساعات تلقائياً
+    - cron: '0 9 * * *' # يعمل يومياً الساعة 9 صباحاً
+  workflow_dispatch: # للسماح لك بتشغيله يدوياً
 
 jobs:
   build:
@@ -18,12 +18,12 @@ jobs:
           python-version: '3.9'
 
       - name: Install dependencies
-        run: pip install requests
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
       - name: Run Bot
-        # هنا يتم تمرير الأسرار من الخزنة إلى الكود
         env:
-          GEMINI_KEY: ${{ secrets.GEMINI_KEY }}
           MY_EMAIL: ${{ secrets.MY_EMAIL }}
           EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
           BLOGGER_EMAIL: ${{ secrets.BLOGGER_EMAIL }}
