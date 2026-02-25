@@ -7,65 +7,61 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
 def run_blogger_bot():
-    # 1. جلب الأسرار من GitHub (تأكد أن الأسماء تطابق الصورة)
-    API_KEY = os.getenv("GEMINI_KEY")
+    # جلب الأسرار من إعدادات GitHub
+    raw_api_key = os.getenv("GEMINI_KEY")
     MY_EMAIL = os.getenv("MY_EMAIL")
     EMAIL_PASS = os.getenv("EMAIL_PASS")
     BLOGGER_EMAIL = os.getenv("BLOGGER_EMAIL")
 
-    # فحص الأمان
-    if not all([API_KEY, MY_EMAIL, EMAIL_PASS, BLOGGER_EMAIL]):
-        print("❌ خطأ: بعض الأسرار مفقودة! تأكد من GEMINI_KEY و MY_EMAIL و EMAIL_PASS و BLOGGER_EMAIL")
+    # فحص الأسرار وتنظيف المفتاح
+    if not all([raw_api_key, MY_EMAIL, EMAIL_PASS, BLOGGER_EMAIL]):
+        print("❌ خطأ: بعض الأسرار مفقودة في GitHub Secrets!")
         return
-
-    # 2. إعداد الموديل (أحدث إصدار Gemini 2.0 Flash)
-    MODEL_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={API_KEY}"
     
-    # قائمة مواضيع "ترند" لعام 2026
-    topics = [
-        "أهم تقنيات الذكاء الاصطناعي في 2026",
-        "كيفية حماية خصوصيتك الرقمية في عصر التطور التقني",
-        "مستقبل العمل عن بعد وأدوات الإنتاجية الذكية",
-        "تطور الأمن السيبراني لمواجهة التهديدات الحديثة"
-    ]
-    topic = random.choice(topics)
-    print(f"📝 جاري توليد مقال عن: {topic}")
+    API_KEY = raw_api_key.strip() # تنظيف المفتاح من أي مسافات مخفية
 
-    # 3. طلب توليد المحتوى من جمناي
+    # استخدام موديل 1.5 Flash لضمان أقصى استقرار مع المفاتيح المجانية
+    MODEL_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={API_KEY}"
+    
+    topic = random.choice([
+        "أهم تقنيات الذكاء الاصطناعي في 2026",
+        "مستقبل التدوين الآلي والربح من الإنترنت",
+        "كيف تحمي بياناتك الرقمية من الاختراق"
+    ])
+    
+    print(f"📝 جاري محاولة توليد مقال عن: {topic}")
+
     payload = {
-        "contents": [{
-            "parts": [{
-                "text": f"اكتب مقال HTML احترافي وطويل باللغة العربية عن {topic}. استخدم تنسيق H2 و H3، واجعله مناسباً لمدونات بلوجر وسهل القراءة."
-            }]
-        }]
+        "contents": [{"parts": [{"text": f"اكتب مقال HTML احترافي بالعربية عن {topic} بتنسيق H2 و H3."}]}]
     }
 
     try:
         response = requests.post(MODEL_URL, json=payload, timeout=30)
-        response.raise_for_status()
-        result = response.json()
         
-        # استخراج النص وتنظيفه
+        # إذا استمر خطأ 400، سيطبع الكود تفاصيل الخطأ هنا لمساعدتك
+        if response.status_code != 200:
+            print(f"❌ خطأ من جوجل ({response.status_code}): {response.text}")
+            return
+
+        result = response.json()
         article_html = result['candidates'][0]['content']['parts'][0]['text']
         article_html = re.sub(r'```html|```', '', article_html).strip()
-        print("✅ تم توليد المقال بنجاح.")
 
-        # 4. إرسال المقال إلى بلوجر عبر الإيميل
+        # إرسال الإيميل لبلوجر
         msg = MIMEMultipart()
         msg['Subject'] = topic
         msg['From'] = MY_EMAIL
         msg['To'] = BLOGGER_EMAIL
         msg.attach(MIMEText(article_html, 'html', 'utf-8'))
 
-        print(f"📧 جاري الإرسال إلى بلوجر: {BLOGGER_EMAIL}")
         with smtplib.SMTP_SSL('smtp.gmail.com', 465, timeout=20) as server:
             server.login(MY_EMAIL, EMAIL_PASS)
             server.send_message(msg)
         
-        print(f"🏁 تم النشر بنجاح! مبروك يا مبرمج.")
+        print(f"🏁 تم النشر بنجاح! المقال الآن في مدونتك.")
 
     except Exception as e:
-        print(f"❌ حدث خطأ: {e}")
+        print(f"❌ حدث خطأ غير متوقع: {e}")
 
 if __name__ == "__main__":
     run_blogger_bot()
