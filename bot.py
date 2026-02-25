@@ -7,16 +7,15 @@ from email.mime.multipart import MIMEMultipart
 
 def generate_pro_article(topic):
     """توليد مقال احترافي بلمسة بشرية وتنسيق سيو"""
-    # أمر متطور لإجبار الذكاء الاصطناعي على كتابة محتوى ذو قيمة عالية
     prompt = f"""
     اكتب مقالاً طويلاً جداً (أكثر من 1000 كلمة) باللغة العربية عن موضوع: ({topic}).
     يجب أن يتبع المقال هذا الترتيب:
     1. مقدمة جذابة تشرح أهمية الموضوع.
     2. جدول سريع يحتوي على أهم النقاط (استخدم وسم table).
     3. عدة عناوين فرعية (H2, H3) تشرح الموضوع بالتفصيل.
-    4. قسم خاص بـ "نصائح الخبراء" لتجنب مشكلة المحتوى الضعيف.
-    5. خاتمة قوية مع دعوة للقراء للتعليق.
-    استخدم تنسيق HTML احترافي، واجعل الأسلوب بشرياً وتثقيفياً تماماً وابتعد عن التكرار.
+    4. قسم خاص بـ "نصائح الخبراء" لزيادة قيمة المحتوى.
+    5. خاتمة قوية.
+    استخدم تنسيق HTML احترافي، واجعل الأسلوب بشرياً وتثقيفياً تماماً.
     """
     
     try:
@@ -39,23 +38,21 @@ def run_blogger_bot():
         print("Missing Secrets!")
         return
 
-    # مواضيع متخصصة لجلب الزوار وقبول أدسنس
     topics = [
         "دليل شامل للربح من التسويق بالعمولة في 2026",
         "كيفية استخدام الذكاء الاصطناعي لتطوير عملك الخاص",
         "خطوات عملية لحماية هاتفك وبياناتك من الاختراق",
         "أفضل طرق استثمار العملات الرقمية للمبتدئين",
         "أسرار تحسين محركات البحث SEO لتصدر نتائج جوجل",
-        "مستقبل الوظائف في عصر الذكاء الاصطناعي وكيف تستعد له",
-        "كيف تبني مدونة ناجحة وتحقق منها آلاف الدولارات شهرياً"
+        "مستقبل الوظائف في عصر الذكاء الاصطناعي",
+        "كيف تبني مدونة ناجحة وتحقق منها أرباحاً مستمرة"
     ]
     topic = random.choice(topics)
     
-    # لمسات بشرية عشوائية للمقدمة (لخداع فلاتر الذكاء الاصطناعي)
     human_touches = [
-        "أهلاً بكم زوارنا الكرام، اليوم سنتحدث عن موضوع يشغل بال الكثيرين وهو ",
-        "في ظل التطور المتسارع الذي نشهده، قررنا اليوم في مدونتنا تسليط الضوء على ",
-        "هل سألت نفسك يوماً كيف يمكنك البدء في؟ اليوم نقدم لك الدليل الكامل حول "
+        "أهلاً بكم زوارنا الكرام، اليوم سنتحدث عن موضوع يهم كل باحث عن النجاح وهو ",
+        "في ظل الثورة الرقمية الحالية، قررنا في موقعنا تسليط الضوء على ",
+        "هل تبحث عن الدليل الشامل لـ؟ اليوم سنكشف لك كل ما تحتاج معرفته عن "
     ]
     intro_touch = random.choice(human_touches)
 
@@ -64,23 +61,27 @@ def run_blogger_bot():
     article_content = generate_pro_article(topic)
 
     if article_content:
-        # إضافة صورة احترافية من Unsplash تتغير حسب الموضوع
-        image_tag = f'<img src="https://source.unsplash.com/800x450/?tech,{topic.split()[-1]}" alt="{topic}" style="width:100%; border-radius:15px; margin-bottom:20px;"/>'
+        # نظام جلب صور احترافي ومباشر لضمان الظهور في بلوجر
+        search_term = "technology" if "ذكاء" in topic or "هاتف" in topic else "business"
+        img_id = random.randint(1, 1000)
+        image_url = f"https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80&sig={img_id}"
+        
+        # وسم الصورة مع تنسيق يمنع الحظر من بلوجر
+        image_tag = f'<div style="text-align:center; margin-bottom:20px;"><img src="{image_url}" alt="{topic}" style="width:100%; max-width:650px; border-radius:15px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/></div>'
         
         msg = MIMEMultipart()
         msg['Subject'] = topic
         msg['From'] = MY_EMAIL
         msg['To'] = BLOGGER_EMAIL
         
-        # التنسيق النهائي للمقال (التصميم الذي سيراه الزائر)
         styled_content = f"""
-        <div dir="rtl" style="font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.8; color: #222; max-width: 800px; margin: auto;">
+        <div dir="rtl" style="font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.8; color: #222; max-width: 800px; margin: auto; padding: 10px;">
             {image_tag}
-            <p style="font-size: 1.1em; font-style: italic; color: #555;">{intro_touch} <strong>{topic}</strong>.</p>
-            <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;"/>
+            <p style="font-size: 1.2em; color: #444; border-right: 5px solid #1a73e8; padding-right: 15px;">{intro_touch} <strong>{topic}</strong>.</p>
+            <br/>
             {article_content}
-            <div style="background: #f1f3f4; padding: 20px; border-radius: 10px; margin-top: 30px;">
-                <strong>💡 نصيحة الموقع:</strong> محتوى هذا المقال مقدم لأغراض تعليمية، تأكد دائماً من متابعة أحدث التطورات في هذا المجال.
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; border: 1px solid #ddd; margin-top: 30px; text-align: center;">
+                <p><strong>هل أعجبك المقال؟</strong> لا تتردد في مشاركة رأيك في التعليقات!</p>
             </div>
         </div>
         """
