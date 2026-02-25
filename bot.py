@@ -26,7 +26,7 @@ def generate_pro_article(topic):
             if response:
                 return response
     except Exception as e:
-        print(f"❌ خطأ أثناء توليد المحتوى: {e}")
+        print(f"Error generating content: {e}")
         return None
 
 def run_blogger_bot():
@@ -36,20 +36,20 @@ def run_blogger_bot():
     BLOGGER_EMAIL = os.getenv("BLOGGER_EMAIL")
 
     if not all([MY_EMAIL, EMAIL_PASS, BLOGGER_EMAIL]):
-        print("❌ تأكد من إضافة الإيميلات وكلمة مرور التطبيقات في GitHub Secrets!")
+        print("Missing Secrets: Check MY_EMAIL, EMAIL_PASS, and BLOGGER_EMAIL")
         return
 
-    # قائمة مواضيع احترافية لجلب الزيارات وقبول أدسنس
+    # قائمة مواضيع احترافية - تم تصحيح الفواصل هنا
     topics = [
         "دليل شامل للربح من التسويق بالعمولة في 2026",
         "كيفية استخدام الذكاء الاصطناعي لتطوير عملك الخاص",
-        "خطوات عملية لحماية هاتفك وبياناتك من التجسس"،
+        "خطوات عملية لحماية هاتفك وبياناتك من التجسس",
         "أفضل طرق استثمار العملات الرقمية للمبتدئين",
         "أسرار تحسين محركات البحث SEO لتصدر نتائج جوجل"
     ]
     topic = random.choice(topics)
     
-    print(f"🚀 جاري توليد ونشر مقال عن: {topic}")
+    print(f"Starting to generate article about: {topic}")
 
     article_content = generate_pro_article(topic)
 
@@ -72,11 +72,11 @@ def run_blogger_bot():
             with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
                 server.login(MY_EMAIL, EMAIL_PASS)
                 server.send_message(msg)
-            print(f"✅ مبروك! المقال نُشر بنجاح الآن في مدونتك.")
+            print(f"Success! The article '{topic}' has been published.")
         except Exception as e:
-            print(f"❌ فشل إرسال الإيميل: {e}")
+            print(f"Email error: {e}")
     else:
-        print("❌ فشل توليد المقال، لن يتم الإرسال.")
+        print("Failed to generate article content.")
 
 if __name__ == "__main__":
     run_blogger_bot()
