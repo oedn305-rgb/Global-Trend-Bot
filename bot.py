@@ -1,59 +1,54 @@
 import os
 import smtplib
 import random
+import time
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from duckduckgo_search import DDGS # مكتبة مجانية تماماً بدون مفتاح
 
-def generate_article(topic):
-    prompt = f"اكتب مقالاً طويلاً واحترافياً باللغة العربية عن {topic}. استخدم تنسيق HTML بداخل المقال (h2, h3, p). اجعله متوافقاً مع سيو وأدسنس."
-    
-    try:
-        with DDGS() as ddgs:
-            # استخدام موديل GPT-4o-mini أو Llama 3 مجاناً
-            results = ddgs.chat(prompt, model='gpt-4o-mini')
-            return results
-    except Exception as e:
-        print(f"❌ خطأ في توليد المحتوى: {e}")
-        return None
+# محاولة الاستيراد مع معالجة الخطأ
+try:
+    from duckduckgo_search import DDGS
+except ImportError:
+    os.system('pip install duckduckgo_search typing_extensions')
+    from duckduckgo_search import DDGS
 
 def run_blogger_bot():
-    # الأسرار المطلوبة فقط للإيميل
     MY_EMAIL = os.getenv("MY_EMAIL")
     EMAIL_PASS = os.getenv("EMAIL_PASS")
     BLOGGER_EMAIL = os.getenv("BLOGGER_EMAIL")
 
-    if not all([MY_EMAIL, EMAIL_PASS, BLOGGER_EMAIL]):
-        print("❌ نقص في إعدادات الإيميل بـ GitHub Secrets")
-        return
-
     topics = [
-        "أسرار النجاح في العمل الحر 2026",
-        "كيفية حماية خصوصيتك على الإنترنت",
-        "دليل شامل لتعلم البرمجة من الصفر"
+        "أفضل طرق استثمار المال في 2026",
+        "كيفية تعلم الذكاء الاصطناعي من الصفر",
+        "أسرار النجاح في العمل عبر الإنترنت"
     ]
     topic = random.choice(topics)
-    print(f"📝 جاري توليد المقال عن: {topic} (بدون API Key)...")
+    
+    print(f"🔄 جاري تحضير المقال عن: {topic}")
 
-    article_content = generate_article(topic)
+    try:
+        # استخدام DDGS لتوليد المحتوى
+        with DDGS() as ddgs:
+            prompt = f"اكتب مقال HTML احترافي وطويل بالعربية عن {topic}. استخدم h2 و h3. اجعله مفيداً جداً ومقبولاً في أدسنس."
+            # تحديد الموديل لضمان الجودة
+            response = ddgs.chat(prompt, model='gpt-4o-mini')
+            
+            if response:
+                msg = MIMEMultipart()
+                msg['Subject'] = topic
+                msg['From'] = MY_EMAIL
+                msg['To'] = BLOGGER_EMAIL
+                msg.attach(MIMEText(response, 'html', 'utf-8'))
 
-    if article_content:
-        # إرسال المقال لبلوجر
-        msg = MIMEMultipart()
-        msg['Subject'] = topic
-        msg['From'] = MY_EMAIL
-        msg['To'] = BLOGGER_EMAIL
-        msg.attach(MIMEText(article_content, 'html', 'utf-8'))
+                with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+                    server.login(MY_EMAIL, EMAIL_PASS)
+                    server.send_message(msg)
+                print(f"✅ تم النشر بنجاح: {topic}")
+            else:
+                print("❌ فشل في الحصول على استجابة من الذكاء الاصطناعي")
 
-        try:
-            with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
-                server.login(MY_EMAIL, EMAIL_PASS)
-                server.send_message(msg)
-            print(f"✅ تم النشر بنجاح! تفقد مدونتك الآن.")
-        except Exception as e:
-            print(f"❌ خطأ في إرسال الإيميل: {e}")
-    else:
-        print("❌ فشل توليد المقال.")
+    except Exception as e:
+        print(f"❌ حدث خطأ: {e}")
 
 if __name__ == "__main__":
     run_blogger_bot()
