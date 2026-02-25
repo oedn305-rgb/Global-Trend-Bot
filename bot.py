@@ -1,25 +1,21 @@
 import os
 import smtplib
 import random
+import g4f # المكتبة البديلة والأقوى
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-# استيراد المكتبة باسمها الجديد
-try:
-    from ddgs import DDGS
-except ImportError:
-    from duckduckgo_search import DDGS
 
 def generate_pro_article(topic):
-    """توليد مقال باستخدام الطريقة المحدثة للمكتبة"""
-    prompt = f"اكتب مقالاً مفصلاً واحترافياً باللغة العربية عن موضوع: ({topic}). استخدم تنسيق HTML (h2, h3, p). اجعله متوافقاً مع أدسنس وسيو، وطويل أكثر من 800 كلمة."
+    """توليد مقال احترافي باستخدام محرك g4f المجاني"""
+    prompt = f"اكتب مقالاً مفصلاً واحترافياً باللغة العربية عن موضوع: ({topic}). استخدم تنسيق HTML (h2, h3, p). اجعله متوافقاً مع أدسنس وسيو، وطويل جداً (أكثر من 800 كلمة)."
     
     try:
-        # الطريقة الجديدة للتعامل مع الموديل
-        with DDGS() as ddgs:
-            # استخدام chat بالشكل الجديد المستقر
-            results = ddgs.chat(prompt, model='gpt-4o-mini')
-            if results:
-                return results
+        response = g4f.ChatCompletion.create(
+            model=g4f.models.gpt_4, # استخدام موديل GPT-4 مجاناً
+            messages=[{"role": "user", "content": prompt}],
+        )
+        if response:
+            return response
     except Exception as e:
         print(f"Generation Error: {e}")
         return None
